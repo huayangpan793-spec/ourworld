@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, Lock, LogIn } from 'lucide-react';
 import { useMemoryStore } from '@/lib/store';
@@ -8,12 +8,20 @@ import { useMemoryStore } from '@/lib/store';
 export function PasswordGate({ children }: { children: React.ReactNode }) {
   const [input, setInput] = useState('');
   const [error, setError] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const settings = useMemoryStore((s) => s.settings);
   const updateSettings = useMemoryStore((s) => s.updateSettings);
 
+  // Wait for localStorage hydration
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  const password = settings.sitePassword || 'ourworld';
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (input === settings.sitePassword) {
+    if (input === password) {
       updateSettings({ isUnlocked: true });
       setError(false);
     } else {
@@ -21,6 +29,9 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
       setInput('');
     }
   };
+
+  // Wait for hydration
+  if (!hydrated) return null;
 
   // If unlocked, show children
   if (settings.isUnlocked) {

@@ -167,11 +167,26 @@ export const useMemoryStore = create<MemoryState>()(
     }),
     {
       name: 'memory-planet-storage',
+      version: 1,
       partialize: (state) => ({
         memories: state.memories,
         settings: state.settings,
         demoLoaded: state.demoLoaded,
       }),
+      migrate: (persisted: any, version) => {
+        // v0 → v1: ensure sitePassword and isUnlocked exist
+        if (version < 1) {
+          return {
+            ...persisted,
+            settings: {
+              ...persisted.settings,
+              sitePassword: persisted.settings?.sitePassword || 'ourworld',
+              isUnlocked: false,
+            },
+          };
+        }
+        return persisted;
+      },
     }
   )
 );
