@@ -45,6 +45,8 @@ export interface AppSettings {
   musicEnabled: boolean;
   reducedMotion: boolean;
   particleCount: ParticleCount;
+  sitePassword: string;
+  isUnlocked: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -52,6 +54,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   musicEnabled: false,
   reducedMotion: false,
   particleCount: 'full',
+  sitePassword: 'ourworld',
+  isUnlocked: false,
 };
 
 // ─── Location ───

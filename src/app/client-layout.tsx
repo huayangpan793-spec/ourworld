@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMemoryStore } from '@/lib/store';
 import { Toast } from '@/components/ui/Toast';
+import { PasswordGate } from '@/components/ui/PasswordGate';
 import { GoldenParticles } from '@/components/effects/GoldenParticles';
 import { FloatingPetals } from '@/components/effects/FloatingPetals';
 import { CursorGlow } from '@/components/effects/CursorGlow';
@@ -34,19 +35,22 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <FloatingPetals count={3} />
       <CursorGlow />
 
-      {/* Page content with transitions */}
-      <AnimatePresence mode="wait">
-        <motion.main
-          key={pathname}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease: 'easeInOut' }}
-          className="flex-1 flex flex-col"
-        >
-          {children}
-        </motion.main>
-      </AnimatePresence>
+      {/* Password protection gate */}
+      <PasswordGate>
+        {/* Page content with transitions */}
+        <AnimatePresence mode="wait">
+          <motion.main
+            key={pathname}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease: 'easeInOut' }}
+            className="flex-1 flex flex-col"
+          >
+            {children}
+          </motion.main>
+        </AnimatePresence>
+      </PasswordGate>
 
       {/* Toast notifications */}
       <Toast />
