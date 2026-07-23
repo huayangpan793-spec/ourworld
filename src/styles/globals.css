@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* ─── Tailwind v4 Theme ─── */
+@theme inline {
+  --color-sky-50: #F4F8FB;
+  --color-sky-100: #EDF5FA;
+  --color-sky-200: #E8F3FA;
+  --color-sky-300: #D4E8F2;
+  --color-sky-400: #9ECBE3;
+  --color-sky-500: #83BBD8;
+  --color-sky-600: #6FA9C8;
+  --color-sky-700: #5A8DA8;
+
+  --color-deep-200: #A8BBC6;
+  --color-deep-400: #8197A5;
+  --color-deep-700: #3E5867;
+  --color-deep-800: #304B5C;
+
+  --color-gold-100: #F0DFAE;
+  --color-gold-200: #E8D59A;
+  --color-gold-300: #E4C878;
+  --color-gold-400: #D4B860;
+
+  --color-paper: #FDF8F0;
+  --color-card: rgba(255, 255, 255, 0.7);
+
+  --font-body: 'LXGW WenKai', 'KaiTi', 'STKaiti', 'Noto Serif SC', serif;
+  --font-title: 'Cormorant Garamond', 'LXGW WenKai', serif;
+  --font-ui: 'Inter', system-ui, sans-serif;
+}
+
+/* ─── Custom Keyframes ─── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-scale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes breathing {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(228, 200, 120, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(228, 200, 120, 0.6); }
+}
+
+@keyframes petal-fall {
+  0% { transform: translateY(-10vh) rotate(0deg) translateX(0); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(360deg) translateX(100px); opacity: 0; }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes letter-unfold {
+  from { transform: rotateX(90deg); opacity: 0; max-height: 0; }
+  to { transform: rotateX(0); opacity: 1; max-height: 1000px; }
+}
+
+@keyframes photo-stack-enter {
+  from { opacity: 0; transform: translateY(20px) rotate(var(--rot, 0deg)); }
+  to { opacity: 1; transform: translateY(0) rotate(var(--rot, 0deg)); }
+}
+
+@keyframes node-appear {
+  from { opacity: 0; transform: scale(0); }
+  50% { transform: scale(1.3); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes sun-rise {
+  from { transform: translateY(30px) scale(0.8); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes gold-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ─── Utility Classes ─── */
+.animate-fade-in-up { animation: fade-in-up 0.8s ease-out both; }
+.animate-fade-in-down { animation: fade-in-down 0.8s ease-out both; }
+.animate-fade-in-scale { animation: fade-in-scale 0.6s ease-out both; }
+.animate-breathing { animation: breathing 3s ease-in-out infinite; }
+.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+.animate-sun-rise { animation: sun-rise 1.2s ease-out both; }
+.animate-node-appear { animation: node-appear 0.6s ease-out both; }
+
+/* Delay utilities */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-1000 { animation-delay: 1000ms; }
+
+/* ─── Base Styles ─── */
+body {
+  font-family: var(--font-ui);
+  background: linear-gradient(180deg, #EDF5FA 0%, #F4F8FB 30%, #FFFFFF 100%);
+  color: var(--color-deep-700);
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-sky-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-sky-400); }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Google Fonts loaded via <link> tags in layout.tsx */
