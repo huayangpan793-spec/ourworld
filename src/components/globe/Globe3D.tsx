@@ -110,7 +110,7 @@ const TEX_URLS = [
   'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg',
 ];
 
-function EarthTexture({ onReady }: { onReady: (tex: THREE.Texture, bump?: THREE.Texture, spec?: THREE.Texture) => void }) {
+function EarthTexture({ onReady }: { onReady: (tex: THREE.Texture) => void }) {
   useEffect(() => {
     const loader = new THREE.TextureLoader();
     let attempts = 0;
@@ -118,7 +118,7 @@ function EarthTexture({ onReady }: { onReady: (tex: THREE.Texture, bump?: THREE.
     function tryLoad() {
       if (attempts >= TEX_URLS.length) return;
       loader.load(TEX_URLS[attempts],
-        (t) => onReady(t, undefined, undefined),
+        (t) => onReady(t),
         undefined,
         () => { attempts++; tryLoad(); }
       );
@@ -202,24 +202,14 @@ function ShootingStars() {
   );
 }
 
-// ─── Atmosphere Glow (brighter, wider) ───
+// ─── Atmosphere — single subtle rim light (no gray haze) ───
 function Atmosphere() {
   return (
     <>
-      {/* Outer soft glow */}
-      <mesh scale={[1.08, 1.08, 1.08]}>
+      {/* Single outer glow */}
+      <mesh scale={[1.025, 1.025, 1.025]}>
         <sphereGeometry args={[EARTH_RADIUS, 48, 48]} />
-        <meshBasicMaterial color="#7AB3CF" transparent opacity={0.06} side={THREE.BackSide} />
-      </mesh>
-      {/* Mid glow */}
-      <mesh scale={[1.04, 1.04, 1.04]}>
-        <sphereGeometry args={[EARTH_RADIUS, 48, 48]} />
-        <meshBasicMaterial color="#9ECBE3" transparent opacity={0.08} side={THREE.BackSide} />
-      </mesh>
-      {/* Inner rim light */}
-      <mesh scale={[1.015, 1.015, 1.015]}>
-        <sphereGeometry args={[EARTH_RADIUS, 48, 48]} />
-        <meshBasicMaterial color="#B8D8EA" transparent opacity={0.12} side={THREE.BackSide} />
+        <meshBasicMaterial color="#7AB3CF" transparent opacity={0.08} side={THREE.BackSide} />
       </mesh>
     </>
   );
@@ -234,16 +224,24 @@ function Earth({ onGlobeClick }: { onGlobeClick?: (lat: number, lng: number) => 
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [loadedTex, setLoadedTex] = useState<THREE.Texture | null>(null);
-  const [loadedBump, setLoadedBump] = useState<THREE.Texture | undefined>();
-  const [loadedSpec, setLoadedSpec] = useState<THREE.Texture | undefined>();
 
-  const proceduralTex = useMemo(() => createProceduralTexture(), []);
+  const proceduralTex = useMemo(() => {
+    const tex = createProceduralTexture();
+    tex.anisotropy = 16;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    return tex;
+  }, []);
   const finalTexture = loadedTex || proceduralTex;
 
-  const handleTexturesReady = useCallback((tex: THREE.Texture, bump?: THREE.Texture, spec?: THREE.Texture) => {
+  const handleTexturesReady = useCallback((tex: THREE.Texture) => {
+    tex.anisotropy = 16;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
     setLoadedTex(tex);
-    setLoadedBump(bump);
-    setLoadedSpec(spec);
   }, []);
 
   const cloudTexture = useMemo(() => {
@@ -307,23 +305,20 @@ function Earth({ onGlobeClick }: { onGlobeClick?: (lat: number, lng: number) => 
       <group ref={pivotRef}>
         {/* Earth — bright & vibrant */}
         <mesh onClick={handleClick} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
-          <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
-          <meshPhongMaterial
+          <sphereGeometry args={[EARTH_RADIUS, 96, 96]} />
+          <meshStandardMaterial
             map={finalTexture}
-            bumpMap={loadedBump}
-            bumpScale={0.01}
-            specularMap={loadedSpec}
-            specular={new THREE.Color('#CCCCCC')}
-            shininess={15}
+            metalness={0.1}
+            roughness={0.6}
             emissive="#C0E0F0"
-            emissiveIntensity={0.2}
+            emissiveIntensity={0.15}
           />
         </mesh>
 
         {/* Clouds (separate ref for extra rotation) */}
         <mesh ref={cloudsRef} scale={[1.008, 1.008, 1.008]}>
           <sphereGeometry args={[EARTH_RADIUS, 32, 32]} />
-          <meshBasicMaterial map={cloudTexture} transparent depthWrite={false} opacity={0.3} />
+          <meshBasicMaterial map={cloudTexture} transparent depthWrite={false} opacity={0.2} />
         </mesh>
 
         {/* Memory nodes — now rotating with the earth! */}
@@ -378,14 +373,22 @@ interface Globe3DProps {
 }
 
 export function Globe3D({ className = '', onGlobeClick, isInteractive = true }: Globe3DProps) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const cameraZ = isMobile ? 6.5 : 5.5;
+
   return (
-    // Dark container background for the starfield
     <div className={`relative ${className}`} style={{ background: 'radial-gradient(ellipse at center, #0A1628 0%, #050810 100%)' }}>
       <Canvas
-        camera={{ position: [0, 0, 5.5], fov: 40, near: 0.1, far: 50 }}
-        gl={{ alpha: true, antialias: true }}
+        camera={{ position: [0, 0, cameraZ], fov: isMobile ? 35 : 40, near: 0.1, far: 50 }}
+        gl={{
+          alpha: true,
+          antialias: true,
+          outputColorSpace: THREE.SRGBColorSpace,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.2,
+        }}
         style={{ background: 'transparent' }}
-        dpr={[1, 1.5]}
+        dpr={[1, 2]}
       >
         <Suspense fallback={null}>
           <Scene onGlobeClick={isInteractive ? onGlobeClick : undefined} />

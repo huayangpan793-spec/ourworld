@@ -20,7 +20,7 @@ export default function EditMemoryPage({ params }: { params: Promise<{ id: strin
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [content, setContent] = useState('');
-  const [author, setAuthor] = useState('花阳');
+  const [author, setAuthor] = useState('花');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [locationName, setLocationName] = useState('');
@@ -178,7 +178,7 @@ export default function EditMemoryPage({ params }: { params: Promise<{ id: strin
           <div>
             <label className="text-xs text-deep-400 mb-1.5 block">记录者</label>
             <select value={author} onChange={(e) => setAuthor(e.target.value)} className="bg-white/60 border border-sky-200/30 rounded-xl px-4 py-2.5 text-sm text-deep-700 outline-none focus:border-sky-400/50 transition-all">
-              <option value="花阳">花阳</option>
+              <option value="花">花</option>
               <option value="灵">灵</option>
             </select>
           </div>

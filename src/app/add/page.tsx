@@ -36,7 +36,7 @@ function AddMemoryContent() {
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [content, setContent] = useState('');
-  const [author, setAuthor] = useState('花阳');
+  const [author, setAuthor] = useState('花');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('');
   const [locationName, setLocationName] = useState('');
@@ -395,7 +395,7 @@ function AddMemoryContent() {
               onChange={(e) => { setAuthor(e.target.value); setDirty(true); }}
               className="bg-white/60 border border-sky-200/30 rounded-xl px-4 py-2.5 text-sm text-deep-700 outline-none focus:border-sky-400/50 transition-all"
             >
-              <option value="花阳">花阳</option>
+              <option value="花">花</option>
               <option value="灵">灵</option>
             </select>
           </div>
