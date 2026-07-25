@@ -13,12 +13,30 @@ import { CursorGlow } from '@/components/effects/CursorGlow';
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const loadDemoData = useMemoryStore((s) => s.loadDemoData);
+  const syncToSupabase = useMemoryStore((s) => s.syncToSupabase);
+  const loadFromSupabase = useMemoryStore((s) => s.loadFromSupabase);
   const reducedMotion = useMemoryStore((s) => s.settings.reducedMotion);
+  const memories = useMemoryStore((s) => s.memories);
 
   // Load demo data on first visit
   useEffect(() => {
     loadDemoData();
   }, [loadDemoData]);
+
+  // Sync data to Supabase in background (once memories are loaded)
+  useEffect(() => {
+    if (memories.length > 0) {
+      const timer = setTimeout(() => {
+        syncToSupabase();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [memories.length, syncToSupabase]);
+
+  // Try loading from Supabase (will merge with local data)
+  useEffect(() => {
+    loadFromSupabase();
+  }, [loadFromSupabase]);
 
   // Listen for reduced motion preference
   useEffect(() => {

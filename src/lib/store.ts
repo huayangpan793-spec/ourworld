@@ -5,6 +5,7 @@ import { persist } from 'zustand/middleware';
 import { Memory, AppSettings, DEFAULT_SETTINGS, PendingLocation, Importance, MemoryType, VisitedStatus } from './types';
 import { generateId } from './utils';
 import { DEMO_MEMORIES } from './demo-data';
+import { supabase } from './supabase';
 
 interface MemoryState {
   // Data
@@ -39,6 +40,10 @@ interface MemoryState {
 
   // Actions — Demo data
   loadDemoData: () => void;
+
+  // Actions — Supabase sync
+  syncToSupabase: () => Promise<void>;
+  loadFromSupabase: () => Promise<void>;
 
   // Selectors (computed via functions)
   getMemory: (id: string) => Memory | undefined;
@@ -78,15 +83,19 @@ export const useMemoryStore = create<MemoryState>()(
           selectedMemoryId: id,
           showDetailPanel: true,
         }));
+        // Auto-sync to Supabase (fire and forget)
+        (async () => { await supabase.from('memories').insert(memory); })();
         return id;
       },
 
       updateMemory: (id, updates) => {
+        const updatedData = { ...updates, updatedAt: new Date().toISOString() };
         set((state) => ({
           memories: state.memories.map((m) =>
-            m.id === id ? { ...m, ...updates, updatedAt: new Date().toISOString() } : m
+            m.id === id ? { ...m, ...updatedData } : m
           ),
         }));
+        (async () => { await supabase.from('memories').update(updatedData).eq('id', id); })();
       },
 
       deleteMemory: (id) => {
@@ -97,6 +106,34 @@ export const useMemoryStore = create<MemoryState>()(
           showDetailPanel:
             state.selectedMemoryId === id ? false : state.showDetailPanel,
         }));
+        (async () => { await supabase.from('memories').delete().eq('id', id); })();
+      },
+
+      // Supabase sync
+      syncToSupabase: async () => {
+        const { memories } = get();
+        for (const m of memories) {
+          try {
+            const { data: existing } = await supabase.from('memories').select('id').eq('id', m.id).single();
+            if (existing) {
+              await supabase.from('memories').update(m).eq('id', m.id);
+            } else {
+              await supabase.from('memories').insert(m);
+            }
+          } catch (err) {
+            console.warn('Sync failed for', m.id, err);
+          }
+        }
+      },
+      loadFromSupabase: async () => {
+        try {
+          const { data } = await supabase.from('memories').select('*');
+          if (data && data.length > 0) {
+            set({ memories: data as Memory[], demoLoaded: true });
+          }
+        } catch (err) {
+          console.warn('Load from Supabase failed, using local data', err);
+        }
       },
 
       // UI
