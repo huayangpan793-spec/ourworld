@@ -5,7 +5,7 @@ import { persist } from 'zustand/middleware';
 import { Memory, AppSettings, DEFAULT_SETTINGS, PendingLocation, Importance, MemoryType, VisitedStatus } from './types';
 import { generateId } from './utils';
 import { DEMO_MEMORIES } from './demo-data';
-import { supabase } from './supabase';
+import { supabase, toSnake, toCamel } from './supabase';
 
 interface MemoryState {
   // Data
@@ -83,8 +83,7 @@ export const useMemoryStore = create<MemoryState>()(
           selectedMemoryId: id,
           showDetailPanel: true,
         }));
-        // Auto-sync to Supabase (fire and forget)
-        (async () => { await supabase.from('memories').insert(memory); })();
+        // Batch sync (see client-layout.tsx)
         return id;
       },
 
@@ -95,7 +94,7 @@ export const useMemoryStore = create<MemoryState>()(
             m.id === id ? { ...m, ...updatedData } : m
           ),
         }));
-        (async () => { await supabase.from('memories').update(updatedData).eq('id', id); })();
+        // Batch sync (see client-layout.tsx)
       },
 
       deleteMemory: (id) => {
@@ -106,21 +105,18 @@ export const useMemoryStore = create<MemoryState>()(
           showDetailPanel:
             state.selectedMemoryId === id ? false : state.showDetailPanel,
         }));
-        (async () => { await supabase.from('memories').delete().eq('id', id); })();
+        // Batch sync (see client-layout.tsx)
       },
 
       // Supabase sync
       syncToSupabase: async () => {
         const { memories } = get();
-        // Upsert: insert or update all at once
         try {
-          await supabase.from('memories').upsert(memories, { onConflict: 'id' });
+          const snakeData = memories.map(toSnake);
+          await supabase.from('memories').upsert(snakeData, { onConflict: 'id' });
         } catch {
-          // fallback: try individually
           for (const m of memories) {
-            try {
-              await supabase.from('memories').upsert(m, { onConflict: 'id' });
-            } catch {}
+            try { await supabase.from('memories').upsert(toSnake(m), { onConflict: 'id' }); } catch {}
           }
         }
       },
@@ -128,21 +124,19 @@ export const useMemoryStore = create<MemoryState>()(
         try {
           const { data } = await supabase.from('memories').select('*');
           if (!data || data.length === 0) return;
-          const remote = data as Memory[];
+          const remote = data.map(toCamel);
           const local = get().memories;
-          // Merge: local wins for same ID, remote adds missing
           const merged = [...local];
           for (const r of remote) {
-            if (!merged.find((m) => m.id === r.id)) {
+            const idx = merged.findIndex((m) => m.id === r.id);
+            if (idx >= 0) {
+              merged[idx] = r;
+            } else {
               merged.push(r);
             }
           }
-          if (merged.length !== local.length) {
-            set({ memories: merged, demoLoaded: true });
-          }
-        } catch (err) {
-          console.warn('Load from Supabase failed');
-        }
+          set({ memories: merged, demoLoaded: true });
+        } catch {}
       },
 
       // UI
