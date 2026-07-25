@@ -111,17 +111,18 @@ export const useMemoryStore = create<MemoryState>()(
       // Supabase sync
       syncToSupabase: async () => {
         const { memories } = get();
-        try {
-          await supabase.from('memories').upsert(memories, { onConflict: 'id' });
-        } catch {
-          for (const m of memories) {
-            try { await supabase.from('memories').upsert(m, { onConflict: 'id' }); } catch {}
-          }
+        for (const m of memories) {
+          try {
+            const { error } = await supabase.from('memories').insert(m);
+            // 23505 = duplicate key (already exists) — skip
+            if (error && error.code !== '23505') console.warn('Sync insert:', error.message);
+          } catch {}
         }
       },
       loadFromSupabase: async () => {
         try {
-          const { data } = await supabase.from('memories').select('*');
+          const { data, error } = await supabase.from('memories').select('*');
+          if (error) { console.warn('Load failed:', error.message); return; }
           if (!data || data.length === 0) return;
           const remote = data as Memory[];
           const local = get().memories;
