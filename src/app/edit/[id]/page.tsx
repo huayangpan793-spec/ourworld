@@ -79,15 +79,31 @@ export default function EditMemoryPage({ params }: { params: Promise<{ id: strin
   const handlePhotoAdd = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const remaining = MAX_PHOTOS - photos.length;
-    const processed = await Promise.all(
-      fileArray.slice(0, remaining).map(async (file) => {
-        try { return await compressImage(file); }
+    const toProcess = fileArray.slice(0, remaining);
+    // Show local preview immediately
+    const previews = await Promise.all(
+      toProcess.map(async (file) => {
+        try { return await compressImage(file, 400, 0.6); }
         catch { return null; }
       })
     );
-    const valid = processed.filter(Boolean) as string[];
+    const valid = previews.filter(Boolean) as string[];
     setPhotos((prev) => [...prev, ...valid]);
     setPhotoCaptions((prev) => [...prev, ...valid.map(() => '')]);
+    // Upload full-size to Supabase in background
+    (async () => {
+      const { uploadPhoto } = await import('@/lib/upload');
+      for (let i = 0; i < toProcess.length; i++) {
+        const url = await uploadPhoto(toProcess[i]);
+        if (url) {
+          setPhotos((prev) => {
+            const next = [...prev];
+            next[next.length - toProcess.length + i] = url;
+            return next;
+          });
+        }
+      }
+    })();
   };
 
   const handlePhotoRemove = (index: number) => {
