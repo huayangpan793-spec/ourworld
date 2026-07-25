@@ -202,16 +202,13 @@ function ShootingStars() {
   );
 }
 
-// ─── Atmosphere — single subtle rim light (no gray haze) ───
+// ─── Edge glow only — no haze ───
 function Atmosphere() {
   return (
-    <>
-      {/* Single outer glow */}
-      <mesh scale={[1.025, 1.025, 1.025]}>
-        <sphereGeometry args={[EARTH_RADIUS, 48, 48]} />
-        <meshBasicMaterial color="#7AB3CF" transparent opacity={0.08} side={THREE.BackSide} />
-      </mesh>
-    </>
+    <mesh scale={[1.015, 1.015, 1.015]}>
+      <sphereGeometry args={[EARTH_RADIUS, 48, 48]} />
+      <meshBasicMaterial color="#6FA9C8" transparent opacity={0.05} side={THREE.BackSide} />
+    </mesh>
   );
 }
 
@@ -349,7 +346,7 @@ function Earth({ onGlobeClick }: { onGlobeClick?: (lat: number, lng: number) => 
 }
 
 // ─── Scene ───
-function Scene({ onGlobeClick }: { onGlobeClick?: (lat: number, lng: number) => void }) {
+function Scene({ onGlobeClick, isMobile }: { onGlobeClick?: (lat: number, lng: number) => void; isMobile?: boolean }) {
   return (
     <>
       <Starfield />
@@ -357,8 +354,9 @@ function Scene({ onGlobeClick }: { onGlobeClick?: (lat: number, lng: number) => 
       <Earth onGlobeClick={onGlobeClick} />
       <OrbitControls
         enablePan={false} enableZoom={true}
-        minDistance={2.8} maxDistance={12}
-        rotateSpeed={0.4} zoomSpeed={0.6}
+        minDistance={2.8} maxDistance={isMobile ? 18 : 12}
+        rotateSpeed={isMobile ? 0.3 : 0.4}
+        zoomSpeed={isMobile ? 0.4 : 0.6}
         dampingFactor={0.06} autoRotate={false}
       />
     </>
@@ -373,7 +371,15 @@ interface Globe3DProps {
 }
 
 export function Globe3D({ className = '', onGlobeClick, isInteractive = true }: Globe3DProps) {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
   const cameraZ = isMobile ? 6.5 : 5.5;
 
   return (
@@ -391,7 +397,7 @@ export function Globe3D({ className = '', onGlobeClick, isInteractive = true }: 
         dpr={[1, 2]}
       >
         <Suspense fallback={null}>
-          <Scene onGlobeClick={isInteractive ? onGlobeClick : undefined} />
+          <Scene onGlobeClick={isInteractive ? onGlobeClick : undefined} isMobile={isMobile} />
         </Suspense>
       </Canvas>
     </div>

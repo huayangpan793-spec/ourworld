@@ -112,27 +112,36 @@ export const useMemoryStore = create<MemoryState>()(
       // Supabase sync
       syncToSupabase: async () => {
         const { memories } = get();
-        for (const m of memories) {
-          try {
-            const { data: existing } = await supabase.from('memories').select('id').eq('id', m.id).single();
-            if (existing) {
-              await supabase.from('memories').update(m).eq('id', m.id);
-            } else {
-              await supabase.from('memories').insert(m);
-            }
-          } catch (err) {
-            console.warn('Sync failed for', m.id, err);
+        // Upsert: insert or update all at once
+        try {
+          await supabase.from('memories').upsert(memories, { onConflict: 'id' });
+        } catch {
+          // fallback: try individually
+          for (const m of memories) {
+            try {
+              await supabase.from('memories').upsert(m, { onConflict: 'id' });
+            } catch {}
           }
         }
       },
       loadFromSupabase: async () => {
         try {
           const { data } = await supabase.from('memories').select('*');
-          if (data && data.length > 0) {
-            set({ memories: data as Memory[], demoLoaded: true });
+          if (!data || data.length === 0) return;
+          const remote = data as Memory[];
+          const local = get().memories;
+          // Merge: local wins for same ID, remote adds missing
+          const merged = [...local];
+          for (const r of remote) {
+            if (!merged.find((m) => m.id === r.id)) {
+              merged.push(r);
+            }
+          }
+          if (merged.length !== local.length) {
+            set({ memories: merged, demoLoaded: true });
           }
         } catch (err) {
-          console.warn('Load from Supabase failed, using local data', err);
+          console.warn('Load from Supabase failed');
         }
       },
 
