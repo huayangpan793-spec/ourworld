@@ -124,6 +124,7 @@ export default function EditMemoryPage({ params }: { params: Promise<{ id: strin
       });
       showToast('记忆已更新');
       selectMemory(id);
+      useMemoryStore.getState().syncToSupabase();
       router.push('/globe');
     } catch {
       showToast('保存失败，请重试');

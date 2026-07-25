@@ -202,6 +202,9 @@ function AddMemoryContent() {
         isHidden: false,
       });
 
+      // Trigger sync to cloud
+      const { syncToSupabase } = useMemoryStore.getState();
+      syncToSupabase();
       showToast('这段记忆已经被好好收下。');
       router.push('/globe');
     } catch {
