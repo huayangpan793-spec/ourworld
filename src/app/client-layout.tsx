@@ -23,17 +23,27 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     loadDemoData();
   }, [loadDemoData]);
 
-  // Sync data to Supabase in background (once memories are loaded)
+  // Sync data to Supabase, then load from Supabase to get other devices' data
   useEffect(() => {
     if (memories.length > 0) {
-      const timer = setTimeout(() => {
-        syncToSupabase();
+      const timer = setTimeout(async () => {
+        await syncToSupabase();
+        await loadFromSupabase();
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [memories.length, syncToSupabase]);
+  }, [memories.length, syncToSupabase, loadFromSupabase]);
 
-  // Try loading from Supabase (will merge with local data)
+  // Periodic sync every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      await syncToSupabase();
+      await loadFromSupabase();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [syncToSupabase, loadFromSupabase]);
+
+  // Also try loading from Supabase on mount
   useEffect(() => {
     loadFromSupabase();
   }, [loadFromSupabase]);
