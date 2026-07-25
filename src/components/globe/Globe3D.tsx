@@ -9,56 +9,121 @@ import { useMemoryStore } from '@/lib/store';
 
 const EARTH_RADIUS = 2;
 
-// ─── Procedural Fallback Texture ───
+// ─── High Quality Procedural Texture ───
 function createProceduralTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = 2048;
+  canvas.height = 1024;
   const ctx = canvas.getContext('2d')!;
-  const grad = ctx.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0, '#C8E0EC');
-  grad.addColorStop(0.25, '#A8D0E4');
-  grad.addColorStop(0.5, '#98C8DC');
-  grad.addColorStop(0.75, '#A8D0E4');
-  grad.addColorStop(1, '#C0D8E6');
+
+  // Ocean — vibrant blue gradient with variation
+  const grad = ctx.createLinearGradient(0, 0, 0, 1024);
+  grad.addColorStop(0, '#7CB8D8');
+  grad.addColorStop(0.15, '#5DA0C4');
+  grad.addColorStop(0.35, '#4A90B8');
+  grad.addColorStop(0.5, '#3E84B0');
+  grad.addColorStop(0.65, '#4A90B8');
+  grad.addColorStop(0.85, '#5DA0C4');
+  grad.addColorStop(1, '#7CB8D8');
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 1024, 512);
-  const continents = [
-    { x: 150, y: 170, w: 110, h: 85 }, { x: 170, y: 180, w: 75, h: 55 },
-    { x: 240, y: 280, w: 38, h: 115 }, { x: 245, y: 270, w: 28, h: 95 },
-    { x: 480, y: 160, w: 55, h: 38 }, { x: 490, y: 165, w: 38, h: 28 },
-    { x: 490, y: 220, w: 55, h: 115 }, { x: 495, y: 230, w: 45, h: 95 },
-    { x: 560, y: 150, w: 190, h: 95 }, { x: 580, y: 160, w: 150, h: 75 },
-    { x: 620, y: 170, w: 110, h: 55 }, { x: 780, y: 330, w: 45, h: 38 },
-    { x: 320, y: 110, w: 38, h: 48 },
+  ctx.fillRect(0, 0, 2048, 1024);
+
+  // Ocean depth variation — subtle wave patterns
+  for (let i = 0; i < 200; i++) {
+    const x = Math.random() * 2048, y = Math.random() * 1024;
+    const r = 30 + Math.random() * 100;
+    const alpha = 0.02 + Math.random() * 0.04;
+    ctx.fillStyle = `rgba(${Math.random() > 0.5 ? '60,140,180' : '100,170,200'},${alpha})`;
+    ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.3, Math.random() * Math.PI, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Detailed continents with varied terrain colors
+  const continentData = [
+    // North America
+    { x: 320, y: 340, shapes: [{ x: 0, y: 0, w: 220, h: 160 }, { x: 40, y: 20, w: 150, h: 100 }, { x: -20, y: 40, w: 100, h: 80 }], land: '#6AAA7A', sand: '#C8B878', mountain: '#8A9A7A' },
+    // South America
+    { x: 490, y: 560, shapes: [{ x: 0, y: 0, w: 70, h: 220 }, { x: -10, y: 30, w: 55, h: 180 }], land: '#5AAA6A', sand: '#B8A868', mountain: '#7A8A6A' },
+    // Europe
+    { x: 970, y: 330, shapes: [{ x: 0, y: 0, w: 110, h: 70 }, { x: 20, y: 10, w: 70, h: 50 }], land: '#7ABA7A', sand: '#C8B870', mountain: '#9AAA7A' },
+    // Africa
+    { x: 980, y: 450, shapes: [{ x: 0, y: 0, w: 110, h: 220 }, { x: 10, y: 20, w: 90, h: 180 }], land: '#8ABA6A', sand: '#D4C060', mountain: '#9A9A6A' },
+    // Asia (large)
+    { x: 1140, y: 320, shapes: [{ x: 0, y: 0, w: 380, h: 180 }, { x: 40, y: 20, w: 300, h: 140 }, { x: -20, y: 40, w: 200, h: 100 }], land: '#6ABA7A', sand: '#C8B060', mountain: '#8A9A7A' },
+    // India
+    { x: 1260, y: 440, shapes: [{ x: 0, y: 0, w: 50, h: 80 }], land: '#5AAA6A', sand: '#C0A860', mountain: '#7A9A7A' },
+    // Southeast Asia
+    { x: 1440, y: 430, shapes: [{ x: 0, y: 0, w: 80, h: 60 }, { x: 20, y: 10, w: 50, h: 40 }], land: '#6AAA7A', sand: '#B8A868', mountain: '#8A9A7A' },
+    // Australia
+    { x: 1580, y: 660, shapes: [{ x: 0, y: 0, w: 90, h: 70 }, { x: 10, y: 10, w: 70, h: 50 }], land: '#C8A868', sand: '#D4B870', mountain: '#9A8A6A' },
+    // Greenland
+    { x: 660, y: 230, shapes: [{ x: 0, y: 0, w: 70, h: 90 }], land: '#B8C8D0', sand: '#C8D0D8', mountain: '#A8B8C0' },
   ];
-  continents.forEach((c) => {
-    ctx.fillStyle = 'rgba(230, 242, 250, 0.6)';
-    ctx.beginPath(); ctx.ellipse(c.x, c.y, c.w / 2, c.h / 2, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(216, 236, 248, 0.4)';
-    ctx.beginPath(); ctx.ellipse(c.x + 5, c.y - 5, c.w / 2.5, c.h / 2.5, 0.2, 0, Math.PI * 2); ctx.fill();
+
+  continentData.forEach((c) => {
+    c.shapes.forEach((s) => {
+      const cx = c.x + s.x, cy = c.y + s.y;
+
+      // Base land color
+      ctx.fillStyle = c.land;
+      ctx.beginPath(); ctx.ellipse(cx, cy, s.w / 2, s.h / 2, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Sand/desert variation (south side)
+      ctx.fillStyle = c.sand;
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath(); ctx.ellipse(cx + s.w * 0.1, cy + s.h * 0.2, s.w * 0.35, s.h * 0.2, 0.2, 0, Math.PI * 2); ctx.fill();
+
+      // Mountain/forest (north side)
+      ctx.fillStyle = c.mountain;
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath(); ctx.ellipse(cx - s.w * 0.05, cy - s.h * 0.15, s.w * 0.3, s.h * 0.15, -0.1, 0, Math.PI * 2); ctx.fill();
+
+      // Lighter highlight
+      ctx.fillStyle = c.land;
+      ctx.globalAlpha = 0.15;
+      ctx.beginPath(); ctx.ellipse(cx - s.w * 0.1, cy - s.h * 0.1, s.w * 0.4, s.h * 0.2, -0.2, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    });
   });
+
+  // Ice caps
+  const iceGrad = ctx.createRadialGradient(1024, 0, 0, 1024, 0, 200);
+  iceGrad.addColorStop(0, 'rgba(220,235,245,0.4)');
+  iceGrad.addColorStop(1, 'rgba(220,235,245,0)');
+  ctx.fillStyle = iceGrad;
+  ctx.fillRect(0, 0, 2048, 200);
+
+  const iceGrad2 = ctx.createRadialGradient(1024, 1024, 0, 1024, 1024, 200);
+  iceGrad2.addColorStop(0, 'rgba(220,235,245,0.35)');
+  iceGrad2.addColorStop(1, 'rgba(220,235,245,0)');
+  ctx.fillStyle = iceGrad2;
+  ctx.fillRect(0, 824, 2048, 200);
+
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
   return tex;
 }
 
-// ─── Texture Loader ───
+// ─── Texture Loader (multi-source fallback) ───
+const TEX_URLS = [
+  'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+  'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg',
+];
+
 function EarthTexture({ onReady }: { onReady: (tex: THREE.Texture, bump?: THREE.Texture, spec?: THREE.Texture) => void }) {
   useEffect(() => {
     const loader = new THREE.TextureLoader();
-    let loaded = 0;
-    let earthTex: THREE.Texture | undefined;
-    let bumpTex: THREE.Texture | undefined;
-    let specTex: THREE.Texture | undefined;
-    const checkDone = () => {
-      loaded++;
-      if (loaded >= 3 && earthTex) onReady(earthTex, bumpTex, specTex);
-    };
-    loader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg', (t) => { earthTex = t; checkDone(); }, undefined, () => checkDone());
-    loader.load('https://threejs.org/examples/textures/planets/earth_normal_2048.jpg', (t) => { bumpTex = t; checkDone(); }, undefined, () => checkDone());
-    loader.load('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg', (t) => { specTex = t; checkDone(); }, undefined, () => checkDone());
+    let attempts = 0;
+
+    function tryLoad() {
+      if (attempts >= TEX_URLS.length) return;
+      loader.load(TEX_URLS[attempts],
+        (t) => onReady(t, undefined, undefined),
+        undefined,
+        () => { attempts++; tryLoad(); }
+      );
+    }
+    tryLoad();
   }, [onReady]);
   return null;
 }
@@ -240,18 +305,18 @@ function Earth({ onGlobeClick }: { onGlobeClick?: (lat: number, lng: number) => 
 
       {/* Pivot group — rotates earth + clouds + nodes together */}
       <group ref={pivotRef}>
-        {/* Earth */}
+        {/* Earth — bright & vibrant */}
         <mesh onClick={handleClick} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
           <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
           <meshPhongMaterial
             map={finalTexture}
             bumpMap={loadedBump}
-            bumpScale={0.015}
+            bumpScale={0.01}
             specularMap={loadedSpec}
-            specular={new THREE.Color('#555555')}
-            shininess={8}
-            emissive="#B0D4E8"
-            emissiveIntensity={0.15}
+            specular={new THREE.Color('#CCCCCC')}
+            shininess={15}
+            emissive="#C0E0F0"
+            emissiveIntensity={0.2}
           />
         </mesh>
 
@@ -279,11 +344,11 @@ function Earth({ onGlobeClick }: { onGlobeClick?: (lat: number, lng: number) => 
         })}
       </group>
 
-      {/* Lighting (static) */}
-      <ambientLight intensity={0.7} color="#E8F4FA" />
-      <directionalLight position={[5, 3, 5]} intensity={1.2} color="#FFF8F0" />
-      <directionalLight position={[-3, -1, -5]} intensity={0.3} color="#A8D0E4" />
-      <hemisphereLight args={['#B0D4E8', '#203050', 0.4]} />
+      {/* Lighting — bright & warm */}
+      <ambientLight intensity={0.8} color="#E8F4FA" />
+      <directionalLight position={[8, 5, 6]} intensity={1.5} color="#FFF8E8" />
+      <directionalLight position={[-4, -2, -6]} intensity={0.4} color="#C0D8E8" />
+      <hemisphereLight args={['#C0E0F0', '#406080', 0.5]} />
     </group>
   );
 }
