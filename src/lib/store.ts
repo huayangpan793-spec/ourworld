@@ -5,7 +5,7 @@ import { persist } from 'zustand/middleware';
 import { Memory, AppSettings, DEFAULT_SETTINGS, PendingLocation, Importance, MemoryType, VisitedStatus } from './types';
 import { generateId } from './utils';
 import { DEMO_MEMORIES } from './demo-data';
-import { supabase, toSnake, toCamel } from './supabase';
+import { supabase } from './supabase';
 
 interface MemoryState {
   // Data
@@ -112,11 +112,10 @@ export const useMemoryStore = create<MemoryState>()(
       syncToSupabase: async () => {
         const { memories } = get();
         try {
-          const snakeData = memories.map(toSnake);
-          await supabase.from('memories').upsert(snakeData, { onConflict: 'id' });
+          await supabase.from('memories').upsert(memories, { onConflict: 'id' });
         } catch {
           for (const m of memories) {
-            try { await supabase.from('memories').upsert(toSnake(m), { onConflict: 'id' }); } catch {}
+            try { await supabase.from('memories').upsert(m, { onConflict: 'id' }); } catch {}
           }
         }
       },
@@ -124,16 +123,13 @@ export const useMemoryStore = create<MemoryState>()(
         try {
           const { data } = await supabase.from('memories').select('*');
           if (!data || data.length === 0) return;
-          const remote = data.map(toCamel);
+          const remote = data as Memory[];
           const local = get().memories;
           const merged = [...local];
           for (const r of remote) {
             const idx = merged.findIndex((m) => m.id === r.id);
-            if (idx >= 0) {
-              merged[idx] = r;
-            } else {
-              merged.push(r);
-            }
+            if (idx >= 0) merged[idx] = r;
+            else merged.push(r);
           }
           set({ memories: merged, demoLoaded: true });
         } catch {}
